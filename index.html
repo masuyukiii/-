@@ -1,425 +1,509 @@
 <!DOCTYPE html>
+
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>シンプル家計簿</title>
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide-react/0.263.1/lucide-react.min.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>シンプル家計簿</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f3f4f6; }
+        .container { max-width: 400px; margin: 0 auto; min-height: 100vh; background: white; }
+        .header { background: #2563eb; color: white; padding: 1rem; }
+        .header-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+        .nav-btn { background: none; border: none; color: #bfdbfe; font-size: 1.2rem; padding: 0.25rem 0.5rem; cursor: pointer; }
+        .nav-btn:hover { color: white; }
+        .title { font-size: 1.25rem; font-weight: bold; }
+        .month-display { text-align: center; color: #bfdbfe; font-size: 0.875rem; }
+        .section { padding: 1rem; border-bottom: 1px solid #e5e7eb; background: white; }
+        .week-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.5rem; }
+        .week-btn { padding: 0.5rem; border: none; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 500; cursor: pointer; line-height: 1.2; }
+        .week-btn.active { background: #2563eb; color: white; }
+        .week-btn.inactive { background: #f3f4f6; color: #374151; }
+        .week-title { font-weight: 600; margin-bottom: 0.1rem; }
+        .week-date { font-size: 0.625rem; color: inherit; opacity: 0.8; }
+        .budget-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+        .budget-card { padding: 0.75rem; border-radius: 0.5rem; }
+        .food-card { background: #f0fdf4; }
+        .misc-card { background: #faf5ff; }
+        .card-title { font-weight: 600; margin-bottom: 0.5rem; }
+        .food-title { color: #166534; }
+        .misc-title { color: #7c3aed; }
+        .budget-text { font-size: 0.75rem; color: #4b5563; margin-bottom: 0.25rem; }
+        .amount { font-weight: bold; }
+        .amount.positive { color: #166534; }
+        .amount.negative { color: #dc2626; }
+        .form-group { margin-bottom: 0.75rem; }
+        .input, .select { width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.5rem; }
+        .btn { width: 100%; padding: 0.5rem; background: #2563eb; color: white; border: none; border-radius: 0.5rem; font-weight: 600; cursor: pointer; }
+        .btn:hover { background: #1d4ed8; }
+        .expense-item { background: white; padding: 0.75rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; }
+        .expense-info { flex: 1; }
+        .expense-header { display: flex; align-items: center; margin-bottom: 0.25rem; }
+        .category-tag { padding: 0.25rem 0.5rem; font-size: 0.75rem; border-radius: 9999px; margin-right: 0.5rem; }
+        .food-tag { background: #dcfce7; color: #166534; }
+        .misc-tag { background: #f3e8ff; color: #7c3aed; }
+        .delete-btn { background: #ef4444; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 0.25rem; cursor: pointer; }
+        .empty-state { text-align: center; color: #6b7280; padding: 2rem; }
+        .divider { border-top: 1px solid #e5e7eb; padding-top: 0.5rem; margin-top: 0.75rem; }
+    </style>
 </head>
 <body>
-  <div id="root"></div>
+    <div class="container">
+        <!-- ヘッダー -->
+        <div class="header">
+            <div class="header-nav">
+                <button class="nav-btn" onclick="changeMonth(-1)">←</button>
+                <div class="title">シンプル家計簿</div>
+                <button class="nav-btn" onclick="changeMonth(1)">→</button>
+            </div>
+            <div class="month-display" id="monthDisplay">2024年8月</div>
+        </div>
 
-  <script type="text/babel">
-    const { useState } = React;
-    const { Plus, Trash2, Calendar } = lucideReact;
+```
+    <!-- 週選択 -->
+    <div class="section">
+        <div class="week-grid" id="weekButtons">
+            <!-- JavaScriptで生成 -->
+        </div>
+        <!-- 現在の週の詳細 -->
+        <div style="margin-top: 1rem; padding: 0.75rem; background: #f8fafc; border-radius: 0.5rem; border-left: 4px solid #2563eb;">
+            <div style="display: flex; align-items: center; margin-bottom: 0.25rem;">
+                <span style="font-size: 1rem; font-weight: 600; color: #1e40af;" id="currentWeekTitle">1週目</span>
+                <span style="margin-left: 0.5rem; color: #64748b; font-size: 0.875rem;" id="currentWeekInfo">8/29〜9/1 (4日間)</span>
+            </div>
+            <div style="font-size: 0.75rem; color: #475569;">
+                食費予算: <span id="currentWeekBudgetDetail">¥9,000</span> / 
+                日額: <span id="dailyBudgetDetail">¥2,250</span>
+            </div>
+        </div>
+    </div>
 
-    const SimpleBudgetApp = () => {
-      // 月の基本設定
-      const [monthlySettings] = useState({
-        totalBudget: 100000,
-        foodBudgetPerWeek: 9000,
-        miscBudgetTotal: 55000
-      });
+    <!-- 予算表示 -->
+    <div class="section">
+        <div class="budget-grid">
+            <!-- 食費 -->
+            <div class="budget-card food-card">
+                <div class="card-title food-title">食費</div>
+                <div>
+                    <div class="budget-text">週予算: <span id="weekBudget">¥9,000</span></div>
+                    <div class="amount positive" id="weekRemaining">週残: ¥9,000</div>
+                </div>
+                <div class="divider">
+                    <div class="budget-text">月予算: ¥45,000</div>
+                    <div class="amount positive" id="monthRemaining">月残: ¥45,000</div>
+                </div>
+            </div>
 
-      // 最終営業日の前日を計算（土日の場合は金曜）
-      const getLastPayDay = (year, month) => {
+            <!-- 雑費 -->
+            <div class="budget-card misc-card">
+                <div class="card-title misc-title">雑費</div>
+                <div class="budget-text">予算: ¥55,000</div>
+                <div class="amount positive" id="miscRemaining">残: ¥55,000</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 支出入力 -->
+    <div class="section">
+        <h2 style="font-weight: 600; margin-bottom: 0.75rem;">支出を追加</h2>
+        <div class="form-group">
+            <select id="category" class="select">
+                <option value="food">食費</option>
+                <option value="misc">雑費</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <input type="text" id="item" placeholder="項目名（例：コンビニ、洗顔）" class="input">
+        </div>
+        <div class="form-group">
+            <input type="number" id="amount" placeholder="金額" class="input">
+        </div>
+        <div class="form-group">
+            <input type="date" id="date" class="input">
+        </div>
+        <button onclick="addExpense()" class="btn">追加</button>
+    </div>
+
+    <!-- 支出履歴 -->
+    <div class="section">
+        <h2 style="font-weight: 600; margin-bottom: 0.75rem;" id="expenseTitle">今週の支出</h2>
+        <div id="expenseList">
+            <div class="empty-state">まだ支出がありません</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // グローバル変数
+    let currentMonth = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0');
+    let selectedWeek = 0;
+    let expenses = [];
+    let weeks = []; // 週情報を格納
+
+    // ローカルストレージから読み込み
+    try {
+        const saved = localStorage.getItem('budgetExpenses');
+        if (saved) {
+            expenses = JSON.parse(saved);
+        }
+    } catch (e) {
+        expenses = [];
+    }
+
+    // 今日の日付を設定
+    document.getElementById('date').value = new Date().toISOString().split('T')[0];
+
+    // 最終営業日の前日を計算（土日の場合は金曜）
+    function getLastPayDay(year, month) {
         const lastDay = new Date(year, month, 0);
         let lastBusinessDay = new Date(lastDay);
+        
         while (lastBusinessDay.getDay() === 0 || lastBusinessDay.getDay() === 6) {
-          lastBusinessDay.setDate(lastBusinessDay.getDate() - 1);
+            lastBusinessDay.setDate(lastBusinessDay.getDate() - 1);
         }
+        
         let payDay = new Date(lastBusinessDay);
         payDay.setDate(payDay.getDate() - 1);
-        if (payDay.getDay() === 0) {
-          payDay.setDate(payDay.getDate() - 2);
-        } else if (payDay.getDay() === 6) {
-          payDay.setDate(payDay.getDate() - 1);
+        
+        if (payDay.getDay() === 0) { // 日曜日
+            payDay.setDate(payDay.getDate() - 2);
+        } else if (payDay.getDay() === 6) { // 土曜日
+            payDay.setDate(payDay.getDate() - 1);
         }
+        
         return payDay;
-      };
+    }
 
-      // 給料日設定（現在の月を基準に自動計算）
-      const getCurrentPayDay = () => {
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = now.getMonth() + 1;
-        return getLastPayDay(year, month);
-      };
-
-      const [payDay] = useState(getCurrentPayDay().toISOString().split('T')[0]);
-
-      const [expenses, setExpenses] = useState(() => {
-        const saved = localStorage.getItem('budgetExpenses');
-        return saved ? JSON.parse(saved) : [];
-      });
-
-      const [newExpense, setNewExpense] = useState({
-        category: 'food',
-        item: '',
-        amount: '',
-        date: new Date().toISOString().split('T')[0]
-      });
-      const [selectedWeek, setSelectedWeek] = useState(0);
-      const [editingExpense, setEditingExpense] = useState(null);
-
-      // データをローカルストレージに保存
-      React.useEffect(() => {
-        localStorage.setItem('budgetExpenses', JSON.stringify(expenses));
-      }, [expenses]);
-
-      // 週の情報を計算（5週制）
-      const calculateWeeks = () => {
-        const startDate = new Date(payDay);
-        const startYear = startDate.getFullYear();
-        const startMonth = startDate.getMonth() + 1;
-
-        const nextMonth = startMonth === 12 ? 1 : startMonth + 1;
-        const nextYear = startMonth === 12 ? startYear + 1 : startYear;
+    // 週の情報を計算（5週制）
+    function calculateWeeks() {
+        const [year, month] = currentMonth.split('-').map(Number);
+        const startDate = getLastPayDay(year, month);
+        
+        // 月の終了日を計算（翌月の最終営業日の前日）
+        const nextMonth = month === 12 ? 1 : month + 1;
+        const nextYear = month === 12 ? year + 1 : year;
         const endDate = getLastPayDay(nextYear, nextMonth);
-
+        
+        // 月の総日数を計算
         const totalDaysInMonth = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
-        const dailyFoodBudget = 45000 / totalDaysInMonth;
-
-        const weeks = [];
+        const dailyFoodBudget = 45000 / totalDaysInMonth; // 日当たりの食費予算
+        
+        const weekData = [];
         let currentDate = new Date(startDate);
-        let totalAllocated = 0;
-
+        let totalAllocated = 0; // 累計配分額を追跡
+        
+        // 5週で構成
         for (let weekNum = 0; weekNum < 5; weekNum++) {
-          const weekStart = new Date(currentDate);
-          let weekEnd;
-
-          if (weekNum === 0) {
-            const dayOfWeek = weekStart.getDay();
-            if (dayOfWeek === 0) {
-              weekEnd = new Date(weekStart);
+            const weekStart = new Date(currentDate);
+            let weekEnd;
+            
+            if (weekNum === 0) {
+                // 初週：開始日から最初の日曜日まで
+                const dayOfWeek = weekStart.getDay(); // 0=日曜, 1=月曜
+                if (dayOfWeek === 0) {
+                    weekEnd = new Date(weekStart);
+                } else {
+                    const daysToSunday = 7 - dayOfWeek;
+                    weekEnd = new Date(weekStart);
+                    weekEnd.setDate(weekEnd.getDate() + daysToSunday);
+                }
+            } else if (weekNum === 4) {
+                // 最終週：月曜日から月末まで
+                const dayOfWeek = currentDate.getDay();
+                let mondayDate = new Date(currentDate);
+                
+                if (dayOfWeek !== 1) {
+                    const daysToMonday = dayOfWeek === 0 ? 1 : 8 - dayOfWeek;
+                    mondayDate.setDate(mondayDate.getDate() + daysToMonday);
+                }
+                
+                weekStart.setTime(mondayDate.getTime());
+                weekEnd = new Date(endDate);
             } else {
-              const daysToSunday = 7 - dayOfWeek;
-              weekEnd = new Date(weekStart);
-              weekEnd.setDate(weekEnd.getDate() + daysToSunday);
+                // 中間週（2, 3, 4週目）：月曜〜日曜の完全な7日間
+                const dayOfWeek = currentDate.getDay();
+                let mondayDate = new Date(currentDate);
+                
+                if (dayOfWeek !== 1) {
+                    const daysToMonday = dayOfWeek === 0 ? 1 : 8 - dayOfWeek;
+                    mondayDate.setDate(mondayDate.getDate() + daysToMonday);
+                }
+                
+                weekStart.setTime(mondayDate.getTime());
+                weekEnd = new Date(weekStart);
+                weekEnd.setDate(weekEnd.getDate() + 6); // 日曜日まで
             }
-          } else if (weekNum === 4) {
-            const dayOfWeek = currentDate.getDay();
-            let mondayDate = new Date(currentDate);
-
-            if (dayOfWeek !== 1) {
-              const daysToMonday = dayOfWeek === 0 ? 1 : 8 - dayOfWeek;
-              mondayDate.setDate(mondayDate.getDate() + daysToMonday);
+            
+            // その週の日数を計算
+            const daysInWeek = Math.ceil((weekEnd - weekStart) / (1000 * 60 * 60 * 24)) + 1;
+            
+            // 週の予算を計算
+            let foodBudget;
+            if (weekNum === 4) {
+                // 最終週は残り全額を配分（四捨五入誤差を調整）
+                foodBudget = 45000 - totalAllocated;
+            } else {
+                // 日割り計算
+                foodBudget = Math.round(dailyFoodBudget * daysInWeek);
+                totalAllocated += foodBudget;
             }
-
-            weekStart.setTime(mondayDate.getTime());
-            weekEnd = new Date(endDate);
-          } else {
-            const dayOfWeek = currentDate.getDay();
-            let mondayDate = new Date(currentDate);
-
-            if (dayOfWeek !== 1) {
-              const daysToMonday = dayOfWeek === 0 ? 1 : 8 - dayOfWeek;
-              mondayDate.setDate(mondayDate.getDate() + daysToMonday);
-            }
-
-            weekStart.setTime(mondayDate.getTime());
-            weekEnd = new Date(weekStart);
-            weekEnd.setDate(weekEnd.getDate() + 6);
-          }
-
-          const daysInWeek = Math.ceil((weekEnd - weekStart) / (1000 * 60 * 60 * 24)) + 1;
-
-          let foodBudget;
-          if (weekNum === 4) {
-            foodBudget = 45000 - totalAllocated;
-          } else {
-            foodBudget = Math.round(dailyFoodBudget * daysInWeek);
-            totalAllocated += foodBudget;
-          }
-
-          weeks.push({
-            id: weekNum,
-            name: `${weekNum + 1}週目`,
-            startDate: weekStart,
-            endDate: weekEnd,
-            foodBudget: foodBudget,
-            daysInWeek: daysInWeek,
-            dailyBudget: Math.round(dailyFoodBudget * 100) / 100,
-            totalDaysInMonth: totalDaysInMonth,
-            period: `${weekStart.getMonth() + 1}/${weekStart.getDate()}-${weekEnd.getMonth() + 1}/${weekEnd.getDate()}`
-          });
-
-          currentDate = new Date(weekEnd);
-          currentDate.setDate(currentDate.getDate() + 1);
+            
+            weekData.push({
+                id: weekNum,
+                name: (weekNum + 1) + '週目',
+                startDate: weekStart,
+                endDate: weekEnd,
+                foodBudget: foodBudget,
+                daysInWeek: daysInWeek,
+                period: (weekStart.getMonth() + 1) + '/' + weekStart.getDate() + '-' + (weekEnd.getMonth() + 1) + '/' + weekEnd.getDate()
+            });
+            
+            // 次の週の開始日を設定
+            currentDate = new Date(weekEnd);
+            currentDate.setDate(currentDate.getDate() + 1);
         }
+        
+        return weekData;
+    }
 
-        return weeks;
-      };
+    // データ保存
+    function saveData() {
+        try {
+            localStorage.setItem('budgetExpenses', JSON.stringify(expenses));
+        } catch (e) {
+            console.log('データ保存に失敗しました');
+        }
+    }
 
-      const [weeks] = useState(calculateWeeks());
+    // 月変更
+    function changeMonth(direction) {
+        const [year, month] = currentMonth.split('-').map(Number);
+        let newYear = year;
+        let newMonth = month + direction;
+        
+        if (newMonth > 12) {
+            newMonth = 1;
+            newYear++;
+        } else if (newMonth < 1) {
+            newMonth = 12;
+            newYear--;
+        }
+        
+        currentMonth = newYear + '-' + String(newMonth).padStart(2, '0');
+        selectedWeek = 0;
+        weeks = calculateWeeks(); // 新しい月の週情報を再計算
+        updateDisplay();
+    }
 
-      // 支出を追加
-      const addExpense = () => {
-        if (!newExpense.item || !newExpense.amount || !newExpense.date) return;
+    // 週選択
+    function selectWeek(weekIndex) {
+        selectedWeek = weekIndex;
+        updateDisplay();
+    }
+
+    // 支出追加
+    function addExpense() {
+        const category = document.getElementById('category').value;
+        const item = document.getElementById('item').value;
+        const amount = parseInt(document.getElementById('amount').value);
+        const date = document.getElementById('date').value;
+
+        if (!item || !amount || !date) {
+            alert('すべての項目を入力してください');
+            return;
+        }
 
         const expense = {
-          id: Date.now(),
-          category: newExpense.category,
-          item: newExpense.item,
-          amount: parseInt(newExpense.amount),
-          weekId: selectedWeek,
-          date: newExpense.date
+            id: Date.now(),
+            category: category,
+            item: item,
+            amount: amount,
+            date: date,
+            month: currentMonth,
+            weekId: selectedWeek
         };
 
-        setExpenses([...expenses, expense]);
-        setNewExpense({
-          category: 'food',
-          item: '',
-          amount: '',
-          date: new Date().toISOString().split('T')[0]
-        });
-      };
+        expenses.push(expense);
+        saveData();
+        
+        // フォームリセット
+        document.getElementById('item').value = '';
+        document.getElementById('amount').value = '';
+        document.getElementById('date').value = new Date().toISOString().split('T')[0];
+        
+        updateDisplay();
+    }
 
-      // 支出を更新
-      const updateExpense = () => {
-        if (!editingExpense || !editingExpense.item || !editingExpense.amount || !editingExpense.date) return;
+    // 支出削除
+    function deleteExpense(id) {
+        if (confirm('この支出を削除しますか？')) {
+            expenses = expenses.filter(expense => expense.id !== id);
+            saveData();
+            updateDisplay();
+        }
+    }
 
-        setExpenses(expenses.map(expense =>
-          expense.id === editingExpense.id
-            ? { ...editingExpense, amount: parseInt(editingExpense.amount) }
-            : expense
-        ));
-        setEditingExpense(null);
-      };
+    // 表示更新
+    function updateDisplay() {
+        try {
+            // 月表示
+            const [year, month] = currentMonth.split('-');
+            const payDay = getLastPayDay(parseInt(year), parseInt(month));
+            document.getElementById('monthDisplay').textContent = year + '年' + month + '月 (' + 
+                (payDay.getMonth() + 1) + '/' + payDay.getDate() + '〜)';
 
-      // 編集をキャンセル
-      const cancelEdit = () => {
-        setEditingExpense(null);
-      };
+            // 週ボタン生成
+            const weekButtons = document.getElementById('weekButtons');
+            weekButtons.innerHTML = '';
+            
+            // 週データが存在しない場合のフォールバック
+            if (!weeks || weeks.length === 0) {
+                for (let i = 0; i < 5; i++) {
+                    const button = document.createElement('button');
+                    button.innerHTML = 
+                        '<div class="week-title">' + (i + 1) + '週目</div>' +
+                        '<div class="week-date">計算中...</div>';
+                    button.className = 'week-btn ' + (selectedWeek === i ? 'active' : 'inactive');
+                    button.onclick = () => selectWeek(i);
+                    weekButtons.appendChild(button);
+                }
+            } else {
+                for (let i = 0; i < 5; i++) {
+                    const button = document.createElement('button');
+                    const currentWeek = weeks[i];
+                    if (currentWeek) {
+                        button.innerHTML = 
+                            '<div class="week-title">' + (i + 1) + '週目</div>' +
+                            '<div class="week-date">' + currentWeek.period + '</div>';
+                    } else {
+                        button.innerHTML = 
+                            '<div class="week-title">' + (i + 1) + '週目</div>' +
+                            '<div class="week-date">-</div>';
+                    }
+                    button.className = 'week-btn ' + (selectedWeek === i ? 'active' : 'inactive');
+                    button.onclick = () => selectWeek(i);
+                    weekButtons.appendChild(button);
+                }
+            }
 
-      // 編集開始
-      const startEdit = (expense) => {
-        setEditingExpense({ ...expense, amount: expense.amount.toString() });
-      };
+            // 現在の週の詳細情報を更新
+            const currentWeek = weeks && weeks[selectedWeek] ? weeks[selectedWeek] : null;
+            if (currentWeek) {
+                document.getElementById('currentWeekTitle').textContent = (selectedWeek + 1) + '週目';
+                document.getElementById('currentWeekInfo').textContent = 
+                    currentWeek.period + ' (' + currentWeek.daysInWeek + '日間)';
+                document.getElementById('currentWeekBudgetDetail').textContent = '¥' + currentWeek.foodBudget.toLocaleString();
+                
+                const dailyBudget = Math.round(currentWeek.foodBudget / currentWeek.daysInWeek);
+                document.getElementById('dailyBudgetDetail').textContent = '¥' + dailyBudget.toLocaleString();
+            } else {
+                document.getElementById('currentWeekTitle').textContent = (selectedWeek + 1) + '週目';
+                document.getElementById('currentWeekInfo').textContent = '計算中...';
+                document.getElementById('currentWeekBudgetDetail').textContent = '¥0';
+                document.getElementById('dailyBudgetDetail').textContent = '¥0';
+            }
 
-      // 支出を削除
-      const deleteExpense = (expenseId) => {
-        setExpenses(expenses.filter(expense => expense.id !== expenseId));
-      };
+            // 現在の月の支出をフィルタ
+            const currentMonthExpenses = expenses.filter(expense => expense.month === currentMonth);
+            
+            // 食費計算
+            const foodExpenses = currentMonthExpenses.filter(expense => expense.category === 'food');
+            const weekFoodExpenses = foodExpenses.filter(expense => expense.weekId === selectedWeek);
+            
+            const totalFoodSpent = foodExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+            const weekFoodSpent = weekFoodExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+            
+            const weekBudget = currentWeek ? currentWeek.foodBudget : 9000;
+            const monthFoodRemaining = 45000 - totalFoodSpent;
+            const weekFoodRemaining = weekBudget - weekFoodSpent;
 
-      // 週の食費残額計算
-      const calculateFoodRemaining = (weekId) => {
-        const weekExpenses = expenses.filter(
-          expense => expense.category === 'food' && expense.weekId === weekId
-        );
-        const spent = weekExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-        return weeks[weekId].foodBudget - spent;
-      };
+            document.getElementById('weekBudget').textContent = '¥' + weekBudget.toLocaleString();
+            document.getElementById('weekRemaining').textContent = '週残: ¥' + weekFoodRemaining.toLocaleString();
+            document.getElementById('weekRemaining').className = 'amount ' + (weekFoodRemaining >= 0 ? 'positive' : 'negative');
+            document.getElementById('monthRemaining').textContent = '月残: ¥' + monthFoodRemaining.toLocaleString();
+            document.getElementById('monthRemaining').className = 'amount ' + (monthFoodRemaining >= 0 ? 'positive' : 'negative');
 
-      // 月の食費残額計算
-      const calculateMonthlyFoodRemaining = () => {
-        const foodExpenses = expenses.filter(expense => expense.category === 'food');
-        const spent = foodExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-        return 45000 - spent;
-      };
+            // 雑費計算
+            const miscExpenses = currentMonthExpenses.filter(expense => expense.category === 'misc');
+            const totalMiscSpent = miscExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+            const miscRemaining = 55000 - totalMiscSpent;
 
-      // 月の雑費残額計算
-      const calculateMiscRemaining = () => {
-        const miscExpenses = expenses.filter(expense => expense.category === 'misc');
-        const spent = miscExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-        return monthlySettings.miscBudgetTotal - spent;
-      };
+            document.getElementById('miscRemaining').textContent = '残: ¥' + miscRemaining.toLocaleString();
+            document.getElementById('miscRemaining').className = 'amount ' + (miscRemaining >= 0 ? 'positive' : 'negative');
 
-      // 現在の週の支出
-      const currentWeekExpenses = expenses.filter(expense => expense.weekId === selectedWeek);
+            // 支出履歴のタイトル更新
+            const weekTitle = currentWeek ? 
+                (selectedWeek + 1) + '週目の支出 (' + currentWeek.period + ')' : 
+                (selectedWeek + 1) + '週目の支出';
+            document.getElementById('expenseTitle').textContent = weekTitle;
 
-      return React.createElement('div', { className: "max-w-md mx-auto bg-gray-50 min-h-screen" },
-        // ヘッダー
-        React.createElement('div', { className: "bg-blue-600 text-white p-4" },
-          React.createElement('h1', { className: "text-xl font-bold text-center" }, "シンプル家計簿"),
-          React.createElement('div', { className: "text-center mt-2 text-blue-100" },
-            `管理期間: ${new Date(payDay).getMonth() + 1}/${new Date(payDay).getDate()}〜`
-          )
-        ),
+            // 支出リスト更新
+            const expenseList = document.getElementById('expenseList');
+            const weekExpenses = currentMonthExpenses.filter(expense => expense.weekId === selectedWeek);
 
-        // 週選択
-        React.createElement('div', { className: "p-4 bg-white border-b" },
-          React.createElement('div', { className: "grid grid-cols-5 gap-2" },
-            weeks.map((week, index) =>
-              React.createElement('button', {
-                key: week.id,
-                onClick: () => setSelectedWeek(index),
-                className: `p-2 rounded text-sm font-medium ${
-                  selectedWeek === index ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'
-                }`
-              }, week.name)
-            )
-          )
-        ),
+            if (weekExpenses.length === 0) {
+                expenseList.innerHTML = '<div class="empty-state">まだ支出がありません</div>';
+            } else {
+                expenseList.innerHTML = weekExpenses.map(expense => 
+                    '<div class="expense-item">' +
+                        '<div class="expense-info">' +
+                            '<div class="expense-header">' +
+                                '<span class="category-tag ' + (expense.category === 'food' ? 'food-tag' : 'misc-tag') + '">' +
+                                    (expense.category === 'food' ? '食費' : '雑費') +
+                                '</span>' +
+                                '<span>' + expense.item + '</span>' +
+                            '</div>' +
+                            '<div style="display: flex; justify-content: space-between; align-items: center;">' +
+                                '<div style="font-size: 1.125rem; font-weight: bold;">¥' + expense.amount.toLocaleString() + '</div>' +
+                                '<div style="font-size: 0.875rem; color: #6b7280;">' + 
+                                    new Date(expense.date).toLocaleDateString('ja-JP', { month: '1', day: '1' }) +
+                                '</div>' +
+                            '</div>' +
+                        '</div>' +
+                        '<button class="delete-btn" onclick="deleteExpense(' + expense.id + ')">削除</button>' +
+                    '</div>'
+                ).join('');
+            }
+        } catch (error) {
+            console.log('表示更新でエラーが発生しました:', error);
+            // エラーが発生してもボタンは表示する
+            const weekButtons = document.getElementById('weekButtons');
+            if (weekButtons && !weekButtons.innerHTML) {
+                weekButtons.innerHTML = '';
+                for (let i = 0; i < 5; i++) {
+                    const button = document.createElement('button');
+                    button.innerHTML = 
+                        '<div class="week-title">' + (i + 1) + '週目</div>' +
+                        '<div class="week-date">エラー</div>';
+                    button.className = 'week-btn ' + (selectedWeek === i ? 'active' : 'inactive');
+                    button.onclick = () => selectWeek(i);
+                    weekButtons.appendChild(button);
+                }
+            }
+        }
+    }
 
-        // 現在の週の情報
-        React.createElement('div', { className: "p-4 bg-white border-b" },
-          React.createElement('div', { className: "flex items-center justify-center mb-3" },
-            React.createElement(Calendar, { className: "w-4 h-4 mr-2 text-gray-600" }),
-            React.createElement('span', { className: "text-gray-600" }, weeks[selectedWeek].period)
-          ),
+    // 初期化 - より安全な方法
+    function initialize() {
+        try {
+            weeks = calculateWeeks();
+            updateDisplay();
+        } catch (error) {
+            console.log('初期化でエラーが発生しました:', error);
+            // エラーが発生してもボタンは表示
+            weeks = [];
+            updateDisplay();
+        }
+    }
 
-          React.createElement('div', { className: "grid grid-cols-2 gap-3" },
-            // 食費
-            React.createElement('div', { className: "bg-green-50 p-3 rounded-lg" },
-              React.createElement('h3', { className: "font-semibold text-green-800 mb-2" }, "食費"),
+    // ページ読み込み完了後に初期化
+    document.addEventListener('DOMContentLoaded', initialize);
+    
+    // すぐに実行もする（念のため）
+    initialize();
+</script>
+```
 
-              // 週の食費
-              React.createElement('div', { className: "mb-3" },
-                React.createElement('div', { className: "text-xs text-green-600 mb-1" },
-                  `週予算: ¥${weeks[selectedWeek].foodBudget.toLocaleString()}`
-                ),
-                React.createElement('div', {
-                  className: `text-lg font-bold ${calculateFoodRemaining(selectedWeek) >= 0 ? 'text-green-700' : 'text-red-600'}`
-                }, `週残: ¥${calculateFoodRemaining(selectedWeek).toLocaleString()}`)
-              ),
-
-              // 月の食費
-              React.createElement('div', { className: "border-t border-green-200 pt-2" },
-                React.createElement('div', { className: "text-xs text-green-600 mb-1" }, "月予算: ¥45,000"),
-                React.createElement('div', {
-                  className: `text-sm font-semibold ${calculateMonthlyFoodRemaining() >= 0 ? 'text-green-700' : 'text-red-600'}`
-                }, `月残: ¥${calculateMonthlyFoodRemaining().toLocaleString()}`)
-              )
-            ),
-
-            // 雑費
-            React.createElement('div', { className: "bg-purple-50 p-3 rounded-lg" },
-              React.createElement('h3', { className: "font-semibold text-purple-800 mb-1" }, "雑費"),
-              React.createElement('div', { className: "text-sm text-purple-600" },
-                `予算: ¥${monthlySettings.miscBudgetTotal.toLocaleString()}`
-              ),
-              React.createElement('div', {
-                className: `text-lg font-bold ${calculateMiscRemaining() >= 0 ? 'text-purple-700' : 'text-red-600'}`
-              }, `残: ¥${calculateMiscRemaining().toLocaleString()}`)
-            )
-          )
-        ),
-
-        // 支出入力
-        React.createElement('div', { className: "p-4 bg-white border-b" },
-          React.createElement('h2', { className: "font-semibold mb-3" }, "支出を追加"),
-
-          React.createElement('div', { className: "space-y-3" },
-            React.createElement('select', {
-              value: newExpense.category,
-              onChange: (e) => setNewExpense({ ...newExpense, category: e.target.value }),
-              className: "w-full p-2 border rounded-lg"
-            },
-              React.createElement('option', { value: 'food' }, "食費"),
-              React.createElement('option', { value: 'misc' }, "雑費")
-            ),
-
-            React.createElement('input', {
-              type: 'text',
-              placeholder: '項目名（例：コンビニ、洗顔）',
-              value: newExpense.item,
-              onChange: (e) => setNewExpense({ ...newExpense, item: e.target.value }),
-              className: "w-full p-2 border rounded-lg"
-            }),
-
-            React.createElement('input', {
-              type: 'number',
-              placeholder: '金額',
-              value: newExpense.amount,
-              onChange: (e) => setNewExpense({ ...newExpense, amount: e.target.value }),
-              className: "w-full p-2 border rounded-lg"
-            }),
-
-            React.createElement('input', {
-              type: 'date',
-              value: newExpense.date,
-              onChange: (e) => setNewExpense({ ...newExpense, date: e.target.value }),
-              className: "w-full p-2 border rounded-lg"
-            }),
-
-            React.createElement('button', {
-              onClick: addExpense,
-              className: "w-full bg-blue-600 text-white p-2 rounded-lg font-semibold flex items-center justify-center"
-            },
-              React.createElement(Plus, { className: "w-4 h-4 mr-2" }),
-              "追加"
-            )
-          )
-        ),
-
-        // 支出履歴
-        React.createElement('div', { className: "p-4" },
-          React.createElement('h2', { className: "font-semibold mb-3" }, `${weeks[selectedWeek].name}の支出`),
-
-          currentWeekExpenses.length === 0
-            ? React.createElement('div', { className: "text-center text-gray-500 py-8" }, "まだ支出がありません")
-            : React.createElement('div', { className: "space-y-2" },
-                currentWeekExpenses.map((expense) =>
-                  React.createElement('div', { key: expense.id, className: "bg-white p-3 rounded-lg border" },
-                    editingExpense && editingExpense.id === expense.id
-                      ? React.createElement('div', { className: "space-y-2" },
-                          React.createElement('select', {
-                            value: editingExpense.category,
-                            onChange: (e) => setEditingExpense({ ...editingExpense, category: e.target.value }),
-                            className: "w-full p-2 border rounded text-sm"
-                          },
-                            React.createElement('option', { value: 'food' }, "食費"),
-                            React.createElement('option', { value: 'misc' }, "雑費")
-                          ),
-                          React.createElement('input', {
-                            type: 'text',
-                            value: editingExpense.item,
-                            onChange: (e) => setEditingExpense({ ...editingExpense, item: e.target.value }),
-                            className: "w-full p-2 border rounded text-sm"
-                          }),
-                          React.createElement('input', {
-                            type: 'number',
-                            value: editingExpense.amount,
-                            onChange: (e) => setEditingExpense({ ...editingExpense, amount: e.target.value }),
-                            className: "w-full p-2 border rounded text-sm"
-                          }),
-                          React.createElement('input', {
-                            type: 'date',
-                            value: editingExpense.date,
-                            onChange: (e) => setEditingExpense({ ...editingExpense, date: e.target.value }),
-                            className: "w-full p-2 border rounded text-sm"
-                          }),
-                          React.createElement('div', { className: "flex gap-2" },
-                            React.createElement('button', { onClick: updateExpense, className: "flex-1 bg-green-600 text-white p-2 rounded text-sm font-semibold" }, "保存"),
-                            React.createElement('button', { onClick: cancelEdit, className: "flex-1 bg-gray-500 text-white p-2 rounded text-sm font-semibold" }, "キャンセル")
-                          )
-                        )
-                      : React.createElement('div', { className: "flex items-center justify-between" },
-                          React.createElement('div', { className: "flex-1", onClick: () => startEdit(expense), style: { cursor: 'pointer' } },
-                            React.createElement('div', { className: "flex items-center mb-1" },
-                              React.createElement('span', {
-                                className: `px-2 py-1 text-xs rounded-full mr-2 ${
-                                  expense.category === 'food' ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'
-                                }`
-                              }, expense.category === 'food' ? '食費' : '雑費'),
-                              React.createElement('span', { className: "font-medium" }, expense.item)
-                            ),
-                            React.createElement('div', { className: "flex items-center justify-between" },
-                              React.createElement('div', { className: "text-lg font-bold text-gray-800" }, `¥${expense.amount.toLocaleString()}`),
-                              React.createElement('div', { className: "text-sm text-gray-500" }, new Date(expense.date).toLocaleDateString('ja-JP', { month: '1', day: '1' }))
-                            )
-                          ),
-                          React.createElement('button', { onClick: () => deleteExpense(expense.id), className: "text-red-500 hover:text-red-700 p-1 ml-2" },
-                            React.createElement(Trash2, { className: "w-4 h-4" })
-                          )
-                        )
-                  )
-                )
-              )
-        )
-      );
-    };
-
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(React.createElement(SimpleBudgetApp));
-  </script>
 </body>
 </html>
