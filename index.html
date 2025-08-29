@@ -60,8 +60,6 @@
         }
         .delete-btn { background: #ef4444; }
         .edit-action-btn { background: #3b82f6; }
-
-        /* ★日付表示用のスタイルを追加 */
         .expense-date {
             display: flex;
             flex-direction: column;
@@ -73,7 +71,7 @@
             width: 4rem;
             height: 4rem;
             color: #3b82f6;
-            flex-shrink: 0; /* 縮まないようにする */
+            flex-shrink: 0;
         }
         .expense-date-day {
             font-size: 1.5rem;
@@ -84,7 +82,6 @@
             font-size: 0.75rem;
             font-weight: 600;
         }
-
     </style>
 </head>
 <body>
@@ -181,9 +178,18 @@
     } catch (e) {
         expenses = [];
     }
+    
+    // ★ 日本のタイムゾーンでYYYY-MM-DD形式の文字列を返す関数
+    function getLocalDateString(date = new Date()) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
 
-    // 今日の日付を設定
-    document.getElementById('date').value = new Date().toISOString().split('T')[0];
+    // ★ 今日の日付を日本時間で設定
+    document.getElementById('date').value = getLocalDateString();
+
 
     function getLastPayDay(year, month) {
         const lastDay = new Date(year, month, 0);
@@ -288,7 +294,8 @@
         
         document.getElementById('item').value = '';
         document.getElementById('amount').value = '';
-        document.getElementById('date').value = new Date().toISOString().split('T')[0];
+        // ★ 日付のリセットも日本時間で行う
+        document.getElementById('date').value = getLocalDateString();
         updateDisplay();
     }
 
@@ -380,8 +387,10 @@
             } else {
                 expenseList.innerHTML = weekExpenses.map(expense => {
                     const expenseDate = new Date(expense.date);
-                    const day = expenseDate.getDate();
-                    const month = expenseDate.getMonth() + 1;
+                    // タイムゾーンのオフセットを考慮して日付を補正
+                    const correctedDate = new Date(expenseDate.getTime() + expenseDate.getTimezoneOffset() * 60000);
+                    const day = correctedDate.getDate();
+                    const month = correctedDate.getMonth() + 1;
                     const dateHtml = `
                         <div class="expense-date">
                             <div class="expense-date-month">${month}月</div>
