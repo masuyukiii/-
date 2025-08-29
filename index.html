@@ -114,7 +114,7 @@
             </select>
         </div>
         <div class="form-group">
-            <input type="text" id="item" placeholder="項目名（例：コンビニ、洗顔）" class="input">
+            <input type="text" id="item" placeholder="項目名（任意）" class="input">
         </div>
         <div class="form-group">
             <input type="number" id="amount" placeholder="金額" class="input">
@@ -305,12 +305,12 @@
     // 支出追加
     function addExpense() {
         const category = document.getElementById('category').value;
-        const item = document.getElementById('item').value;
+        const item = document.getElementById('item').value || '-'; // 空の場合は「-」を設定
         const amount = parseInt(document.getElementById('amount').value);
         const date = document.getElementById('date').value;
 
-        if (!item || !amount || !date) {
-            alert('すべての項目を入力してください');
+        if (!amount || !date) {
+            alert('金額と日付を入力してください');
             return;
         }
 
@@ -445,14 +445,17 @@
             if (weekExpenses.length === 0) {
                 expenseList.innerHTML = '<div class="empty-state">まだ支出がありません</div>';
             } else {
-                expenseList.innerHTML = weekExpenses.map(expense => 
-                    '<div class="expense-item">' +
+                expenseList.innerHTML = weekExpenses.map(expense => {
+                    const displayItem = (expense.item === '-' || !expense.item) ? 
+                        (expense.category === 'food' ? '食費' : '雑費') : expense.item;
+                    
+                    return '<div class="expense-item">' +
                         '<div class="expense-info">' +
                             '<div class="expense-header">' +
                                 '<span class="category-tag ' + (expense.category === 'food' ? 'food-tag' : 'misc-tag') + '">' +
                                     (expense.category === 'food' ? '食費' : '雑費') +
                                 '</span>' +
-                                '<span>' + expense.item + '</span>' +
+                                '<span>' + displayItem + '</span>' +
                             '</div>' +
                             '<div style="display: flex; justify-content: space-between; align-items: center;">' +
                                 '<div style="font-size: 1.125rem; font-weight: bold;">¥' + expense.amount.toLocaleString() + '</div>' +
@@ -462,8 +465,8 @@
                             '</div>' +
                         '</div>' +
                         '<button class="delete-btn" onclick="deleteExpense(' + expense.id + ')">削除</button>' +
-                    '</div>'
-                ).join('');
+                    '</div>';
+                }).join('');
             }
         } catch (error) {
             console.log('表示更新でエラーが発生しました:', error);
